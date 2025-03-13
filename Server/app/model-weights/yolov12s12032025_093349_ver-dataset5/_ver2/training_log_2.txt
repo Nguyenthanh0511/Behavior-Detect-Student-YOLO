@@ -1,0 +1,25 @@
+Mô hình: yolov12s
+Ngày huấn luyện: 12032025
+Số epochs: 500
+Kích thước mô hình: 17.82 MB
+
+_________________________________Log bằng tay__________________________
+EarlyStopping: Training stopped early as no improvement observed in last 50 epochs. Best results observed at epoch 197, best model saved as best.pt.
+To update EarlyStopping(patience=50) pass a new patience value, i.e. `patience=300` or use `patience=0` to disable EarlyStopping.
+
+247 epochs completed in 2.502 hours.
+Optimizer stripped from runs/detect/train/weights/last.pt, 18.6MB
+Optimizer stripped from runs/detect/train/weights/best.pt, 18.6MB
+
+Validating runs/detect/train/weights/best.pt...
+Ultralytics 8.3.63 🚀 Python-3.12.7 torch-2.6.0+cu118 CUDA:0 (NVIDIA A30, 24062MiB)
+YOLOv12s summary (fused): 376 layers, 9,076,530 parameters, 0 gradients, 19.3 GFLOPs
+                 Class     Images  Instances      Box(P          R      mAP50  mAP50-95): 100%|██████████| 3/3 [00:01<00:00,  1.80it/s]
+                   all        179       1229      0.639      0.454      0.457       0.26
+              drinking          3          3      0.473      0.333      0.339      0.339
+          raising_hand          2          2          1          0     0.0349    0.00698
+              sleeping        123        138      0.805      0.897      0.869      0.471
+        using_computer        178        829      0.499      0.497      0.457      0.225
+           using_phone        117        199      0.472      0.427      0.421      0.204
+               writing         54         58      0.585      0.569      0.619      0.315
+Speed: 0.1ms preprocess, 1.6ms inference, 0.0ms loss, 1.0ms postprocess per image
