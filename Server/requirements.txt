@@ -1,0 +1,35 @@
+# Web framework
+flask==2.3.3
+flask-cors==4.0.0
+
+# Image processing and computer vision
+opencv-python==4.8.0.76
+opencv-contrib-python==4.8.0.76
+numpy==1.25.2
+pillow==10.0.1
+
+# Deep learning
+torch==2.0.1
+torchvision==0.15.2
+ultralytics==8.0.145  # For YOLOv8/YOLOv12
+
+# Video streaming
+imutils==0.5.4
+
+# Data processing
+pandas==2.1.0
+matplotlib==3.7.2
+seaborn==0.12.2
+
+# Utilities
+python-dotenv==1.0.0
+requests==2.31.0
+tqdm==4.66.1
+pyyaml==6.0.1
+
+# Optional: for database integration
+# sqlalchemy==2.0.20
+# pymysql==1.1.0
+
+# Optional: for AWS integration if needed
+# boto3==1.28.40
