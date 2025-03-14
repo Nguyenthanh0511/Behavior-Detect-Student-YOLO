@@ -40,6 +40,7 @@ Hệ thống sử dụng mô hình YOLOv12 phiên bản small để nhận diệ
    pip install -r requirements.txt
    ```
 
+- Lưu ý nếu bị thông báo lỗi attn ( Đây là một lớp attention ). Thì hãy chọn mô hình phiên bản (v) thấp hơn.
 3. Cấu hình camera:
    - Lấy địa chỉ IP của camera
    - Thêm đường stream từ IP camera (xem thêm trong file `route.py` để hiểu cách cấu hình)
