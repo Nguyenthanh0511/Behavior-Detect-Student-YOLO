@@ -1,0 +1,25 @@
+Mô hình: yolov12s
+Ngày huấn luyện: 13032025
+Số epochs: 500 
+Kích thước mô hình: 17.83 MB
+
+-------------------------Log tay------------------------
+308 epochs completed in 4.887 hours.
+Optimizer stripped from runs/detect/train/weights/last.pt, 18.6MB
+Optimizer stripped from runs/detect/train/weights/best.pt, 18.6MB
+
+Validating runs/detect/train/weights/best.pt...
+Ultralytics 8.3.63 🚀 Python-3.12.7 torch-2.6.0+cu118 CUDA:0 (NVIDIA A30, 24062MiB)
+YOLOv12s summary (fused): 376 layers, 9,076,530 parameters, 0 gradients, 19.3 GFLOPs
+                 Class     Images  Instances      Box(P          R      mAP50  mAP50-95): 100%|██████████| 5/5 [00:03<00:00,  1.48it/s]
+                   all        295       2426      0.494      0.502      0.432      0.199
+              drinking          4          4      0.561       0.25      0.247      0.198
+          raising_hand          2          2       0.53        0.5      0.497      0.149
+              sleeping        206        229      0.753       0.83      0.783      0.383
+        using_computer        291       1659      0.471      0.565      0.468      0.207
+           using_phone        231        445      0.376      0.524      0.353      0.147
+               writing         85         87      0.276      0.345      0.243      0.109
+Speed: 0.1ms preprocess, 1.4ms inference, 0.0ms loss, 1.3ms postprocess per image
+Results saved to runs/detect/train
+Mô hình đã được lưu tại: /hdd2/minhnv/CodingYOLOv12/StaticModels/yolov12s13032025_000207_ver-dataset5/_ver2/yolov12s13032025.pt
+Kích thước mô hình: 17.83 MB
