@@ -1,0 +1,4 @@
+Mô hình: yolov8s
+Ngày huấn luyện: 13032025_234132
+Số epochs: 1000 
+Kích thước mô hình: 21.48 MB

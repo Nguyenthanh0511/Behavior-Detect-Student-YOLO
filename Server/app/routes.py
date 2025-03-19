@@ -1,4 +1,3 @@
-# app/routes.py
 from flask import Blueprint, render_template, Response
 import cv2
 import numpy as np
@@ -18,10 +17,13 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('CameraMonitor')
 
 # Paths and configuration
-MODEL_PATH = os.path.join(os.getcwd(), 'server', 'app', 'model-weights', 
-                         'yolov12s13032025_000207_ver-dataset6', '_ver2',
-                         'runs', 'detect', 'train', 'weights', 'best.pt')
-RTSP_URL = 'rtsp://admin:L2FCD876@172.16.15.104:554/cam/realmonitor?channel=1&subtype=0&tcp'
+# MODEL_PATH = os.path.join(os.getcwd(), 'app', 'model-weights', 
+#                          'yolov12s13032025_000207_ver-dataset6', '_ver2',
+#                          'runs', 'detect', 'train', 'weights', 'best.pt')
+
+MODEL_PATH = os.path.join(os.getcwd(), 'app', 'model-weights', 
+                         'student-behavior-detection','models','best.pt')
+RTSP_URL = 'rtsp://admin:L2FCD876@172.16.30.46:554/cam/realmonitor?channel=1&subtype=0&tcp'
 FRAME_SIZE = (640, 480)
 MAX_QUEUE_SIZE = 2  # Increased queue size for better buffer management
 
@@ -45,6 +47,7 @@ class VideoCaptureCV:
             self.reconnect_attempts += 1
 
     def read_frames(self):
+        
         while self.running:
             if not self.cap or not self.cap.isOpened():
                 self.handle_reconnection()
