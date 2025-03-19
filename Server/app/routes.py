@@ -9,7 +9,7 @@ import os
 import logging
 from collections import deque
 import torch
-
+import VideoCaptureCV
 main = Blueprint('main', __name__)
 
 # Configure logging
@@ -115,7 +115,7 @@ class HybridProcessor:
                 try:
                     results = self.model(frames, imgsz=640, verbose=False, half=self.half)
                     for frame, result in zip(frames, results):
-                        processed = self.draw_detections(frame, result)
+                        processed = self.draw_detections(frame, result) # Vẽ bouding box
                         self.output_queue.put(processed)
                 except Exception as e:
                     logger.error(f"Processing error: {str(e)}")
