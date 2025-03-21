@@ -16,7 +16,7 @@ Dự án này phát triển hệ thống phát hiện đối tượng sinh viên
 ## 📋 Tổng Quan
 ### Kiến trúc hệ thống:
 <p align="center">
-  <img src="./anhimage/systemArchitecture.png" alt="DaiNam University Logo" width="200"/>
+  <img src="./anhimage/systemArchitecture.png" alt="DaiNam University Logo" width="1000"/>
 </p>
 
 Hệ thống sử dụng mô hình YOLOv12 phiên bản small để nhận diện sinh viên trong lớp học qua camera, kết hợp với giao diện web để hiển thị kết quả và quản lý.
