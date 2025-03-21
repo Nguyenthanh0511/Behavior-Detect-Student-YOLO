@@ -1,12 +1,23 @@
 # Hệ Thống Phát Hiện Sinh Viên Trong Lớp Học
 
+
 <p align="center">
-  <img src="/api/placeholder/800/400" alt="Student Detection System" />
+  <img src="./anhimage/logodnu.webp" alt="DaiNam University Logo" width="200"/>
+    <img src="./anhimage/LogoAIoTLab.png" alt="AIoTLab Logo" width="170"/>
 </p>
+
+[![Made by AIoTLab](https://img.shields.io/badge/Made%20by%20AIoTLab-blue?style=for-the-badge)](https://www.facebook.com/DNUAIoTLab)
+[![Fit DNU](https://img.shields.io/badge/Fit%20DNU-green?style=for-the-badge)](https://fitdnu.net/)
+[![DaiNam University](https://img.shields.io/badge/DaiNam%20University-red?style=for-the-badge)](https://dainam.edu.vn)
+</div>
 
 Dự án này phát triển hệ thống phát hiện đối tượng sinh viên trong lớp học, góp phần nâng cao hiệu quả quản lý lớp học.
 
 ## 📋 Tổng Quan
+### Kiến trúc hệ thống:
+<p align="center">
+  <img src="./anhimage/systemArchitecture.png" alt="DaiNam University Logo" width="200"/>
+</p>
 
 Hệ thống sử dụng mô hình YOLOv12 phiên bản small để nhận diện sinh viên trong lớp học qua camera, kết hợp với giao diện web để hiển thị kết quả và quản lý.
 

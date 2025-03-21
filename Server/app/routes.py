@@ -9,7 +9,9 @@ import os
 import logging
 from collections import deque
 import torch
-import VideoCaptureCV
+# from video_capture_cv import VideoCaptureCV
+# from utils.hybrid_processor import HybridProcessor
+# from utils.video_capture_cv import VideoCaptureCV
 main = Blueprint('main', __name__)
 
 # Configure logging
@@ -17,18 +19,91 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('CameraMonitor')
 
 # Paths and configuration
-# MODEL_PATH = os.path.join(os.getcwd(), 'app', 'model-weights', 
-#                          'yolov12s13032025_000207_ver-dataset6', '_ver2',
-#                          'runs', 'detect', 'train', 'weights', 'best.pt')
-
 MODEL_PATH = os.path.join(os.getcwd(), 'app', 'model-weights', 
-                         'student-behavior-detection','models','best.pt')
-RTSP_URL = 'rtsp://admin:L2FCD876@172.16.30.46:554/cam/realmonitor?channel=1&subtype=0&tcp'
-FRAME_SIZE = (640, 480)
+                         'yolov8s19032025_155604_ver-dataset6', '_ver2',
+                         'runs', 'detect', 'train', 'weights', 'best.pt')
+
+# MODEL_PATH = os.path.join(os.getcwd(), 'app', 'model-weights', 
+#                          'exp-scb','weights','best.pt')
+
+# MODEL_PATH = os.path.join(os.getcwd(), 
+#                          'app', 
+#                          'model-weights', 
+#                          'student-behavior-detection',
+#                          'models',
+#                          'best.pt')
+RTSP_URL = 'rtsp://admin:L2FCD876@172.16.0.166:554/cam/realmonitor?channel=1&subtype=0&tcp'
+FRAME_SIZE = (940, 940)
 MAX_QUEUE_SIZE = 2  # Increased queue size for better buffer management
 
+
+class HybridProcessor:
+    def __init__(self, model_path):
+        try:
+            self.model = YOLO(model_path) 
+            # repo = os.path.join(os.getcwd(), 'CBPH-Net')  # Đường dẫn đến repo YOLOv5 đã clone
+            # print('repo: ', repo)
+            # Tải model YOLOv5 custom từ repo local
+            # self.model = torch.hub.load(repo, 'custom', path=model_path, source='local', force_reload=False)
+            self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+            self.half = self.device.startswith('cuda')
+            self.model.to(self.device)
+            self.model.fuse()
+            self.model.conf = 0.3  # Increased confidence threshold
+            self.model.iou = 0.45  # Adjusted IoU threshold
+            logger.info(f"YOLO model loaded on {self.device}, FP16: {self.half}")
+        except Exception as e:
+            logger.critical(f"Model load failed: {str(e)}")
+            raise
+
+        self.queue = Queue(maxsize=MAX_QUEUE_SIZE)
+        self.output_queue = Queue(maxsize=MAX_QUEUE_SIZE)
+        self.thread = threading.Thread(target=self.process_batch, daemon=True)
+        self.thread.start()
+
+    def process_batch(self):
+        while True:
+            frames = []
+            while len(frames) < 4 and not self.queue.empty():  # Small batch processing
+                frames.append(self.queue.get())
+            
+            if frames:
+                try:
+                    results = self.model(frames, imgsz=640, verbose=False, half=self.half)
+                    for frame, result in zip(frames, results):
+                        processed = self.draw_detections(frame, result) # Vẽ bouding box
+                        self.output_queue.put(processed)
+                except Exception as e:
+                    logger.error(f"Processing error: {str(e)}")
+                    for frame in frames:
+                        self.output_queue.put(frame)
+
+    def draw_detections(self, frame, results):
+        if results.boxes:
+            for box in results.boxes:
+                x1, y1, x2, y2 = map(int, box.xyxy[0])
+                conf = box.conf.item()
+                cls_id = int(box.cls)
+                label = f"{results.names[cls_id]} {conf:.2f}"
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                cv2.putText(frame, label, (x1, y1-10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+        return frame
+
+    def put_frame(self, frame):
+        try:
+            self.queue.put_nowait(frame)
+        except Full:
+            pass  # Intentional frame drop under heavy load
+
+    def get_frame(self):
+        return self.output_queue.get_nowait() if not self.output_queue.empty() else None
+
+
 class VideoCaptureCV:
+    
     def __init__(self, rtsp_url):
+        
         self.rtsp_url = rtsp_url
         self.cap = None
         self.running = True
@@ -85,63 +160,7 @@ class VideoCaptureCV:
             self.cap.release()
         logger.info("Video connection released")
 
-class HybridProcessor:
-    def __init__(self, model_path):
-        try:
-            self.model = YOLO(model_path)
-            self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-            self.half = self.device.startswith('cuda')
-            self.model.to(self.device)
-            self.model.fuse()
-            self.model.conf = 0.3  # Increased confidence threshold
-            self.model.iou = 0.45  # Adjusted IoU threshold
-            logger.info(f"YOLO model loaded on {self.device}, FP16: {self.half}")
-        except Exception as e:
-            logger.critical(f"Model load failed: {str(e)}")
-            raise
 
-        self.queue = Queue(maxsize=MAX_QUEUE_SIZE)
-        self.output_queue = Queue(maxsize=MAX_QUEUE_SIZE)
-        self.thread = threading.Thread(target=self.process_batch, daemon=True)
-        self.thread.start()
-
-    def process_batch(self):
-        while True:
-            frames = []
-            while len(frames) < 4 and not self.queue.empty():  # Small batch processing
-                frames.append(self.queue.get())
-            
-            if frames:
-                try:
-                    results = self.model(frames, imgsz=640, verbose=False, half=self.half)
-                    for frame, result in zip(frames, results):
-                        processed = self.draw_detections(frame, result) # Vẽ bouding box
-                        self.output_queue.put(processed)
-                except Exception as e:
-                    logger.error(f"Processing error: {str(e)}")
-                    for frame in frames:
-                        self.output_queue.put(frame)
-
-    def draw_detections(self, frame, results):
-        if results.boxes:
-            for box in results.boxes:
-                x1, y1, x2, y2 = map(int, box.xyxy[0])
-                conf = box.conf.item()
-                cls_id = int(box.cls)
-                label = f"{results.names[cls_id]} {conf:.2f}"
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                cv2.putText(frame, label, (x1, y1-10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-        return frame
-
-    def put_frame(self, frame):
-        try:
-            self.queue.put_nowait(frame)
-        except Full:
-            pass  # Intentional frame drop under heavy load
-
-    def get_frame(self):
-        return self.output_queue.get_nowait() if not self.output_queue.empty() else None
 
 # Initialize system components
 try:
