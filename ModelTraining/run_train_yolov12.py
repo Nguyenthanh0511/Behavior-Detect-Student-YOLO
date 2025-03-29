@@ -15,15 +15,18 @@ import sys
 import time
 from pathlib import Path
 
-# Thiết lập logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('training.log'),
-        logging.StreamHandler(sys.stdout)
-    ]
-)
+# Thiết lập logging với đường dẫn đầy đủ
+def setup_logging(experiment_path):
+    log_file = os.path.join(experiment_path, 'training.log')
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler(log_file),
+            logging.StreamHandler(sys.stdout)
+        ]
+    )
+    logging.info(f"Log file saved to: {log_file}")
 
 # Thiết lập random seed cho reproducibility
 def set_seed(seed=42):
@@ -37,7 +40,7 @@ def set_seed(seed=42):
 set_seed()
 
 # Đường dẫn đến dataset
-data_yaml_path = "/hdd2/minhnv/CodingYOLOv12/Dataset/Student-Behavior-Recognition-9/data.yaml"
+data_yaml_path = "/hdd2/minhnv/CodingYOLOv12/Dataset/T-Student_FIT-DNU-1/data.yaml"
 
 # Define hyperparameter configurations to try
 hyperparameter_configs = [
@@ -198,6 +201,9 @@ for config_idx, config in enumerate(hyperparameter_configs):
     experiment_save_path = f'/hdd2/minhnv/CodingYOLOv12/Behavior-Detect-Student-YOLO/StaticModels/{nameYoloFamily}_{experiment_date}_exp{config_idx+1}_{config["name"]}/'
     os.makedirs(experiment_save_path, exist_ok=True)
     
+    # Setup logging cho experiment này
+    setup_logging(experiment_save_path)
+    
     # Save configuration for reference
     with open(os.path.join(experiment_save_path, 'config.json'), 'w') as f:
         json.dump(config, f, indent=4)
@@ -225,6 +231,9 @@ for config_idx, config in enumerate(hyperparameter_configs):
         "warmup_epochs": config["warmup_epochs"],
         "pretrained": True,
         "dropout": 0.0,
+        "save_period": -1,  # Không lưu các epoch trung gian
+        "save_best": True,  # Lưu model tốt nhất
+        "save_last": False  # Không lưu model cuối cùng
         # Add all augmentation parameters
         **aug_config
     }
