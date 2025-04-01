@@ -1,23 +1,25 @@
-#------------------ Hyperparameter Tuning
-import itertools
-import json
-from datetime import datetime
-import torch
 import os
-import yaml
-import matplotlib.pyplot as plt
-from sklearn.model_selection import KFold
-from ultralytics import YOLO
+import json
+import glob
+import pandas as pd
 import numpy as np
-from collections import Counter
+import matplotlib.pyplot as plt
+import seaborn as sns
+from ultralytics import YOLO
+from datetime import datetime
 import logging
 import sys
-import time
 from pathlib import Path
+from tqdm import tqdm
+import torch
+import csv
+from tabulate import tabulate
 
-# Thiết lập logging với đường dẫn đầy đủ
-def setup_logging(experiment_path):
-    log_file = os.path.join(experiment_path, 'training.log')
+# Thiết lập logging
+def setup_logging(log_dir):
+    os.makedirs(log_dir, exist_ok=True)
+    log_file = os.path.join(log_dir, f'evaluation_{datetime.now().strftime("%d%m%Y_%H%M%S")}.log')
+    
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s - %(levelname)s - %(message)s',
@@ -26,338 +28,341 @@ def setup_logging(experiment_path):
             logging.StreamHandler(sys.stdout)
         ]
     )
-    logging.info(f"Log file saved to: {log_file}")
+    return log_file
 
-# Thiết lập random seed cho reproducibility
-def set_seed(seed=42):
-    torch.manual_seed(seed)
-    np.random.seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
+# Thiết lập path cho dữ liệu test và thư mục mô hình
+BASE_MODELS_DIR = '/hdd2/minhnv/CodingYOLOv12/Behavior-Detect-Student-YOLO/StaticModels/yolov12Training-31032025_1833/'
+TEST_DATA_PATH = '/hdd2/minhnv/CodingYOLOv12/Dataset/T-Student_FIT-DNU-update-1/test/images/'  # Đường dẫn tới tập test images
+DATA_YAML = '/hdd2/minhnv/CodingYOLOv12/Dataset/T-Student_FIT-DNU-update-1/data.yaml'  # Đường dẫn tới file data.yaml
 
-# Thiết lập seed
-set_seed()
+# Thư mục để lưu kết quả đánh giá
+EVAL_RESULTS_DIR = os.path.join(BASE_MODELS_DIR, 'evaluation_results')
+os.makedirs(EVAL_RESULTS_DIR, exist_ok=True)
 
-# Đường dẫn đến dataset
-data_yaml_path = "/hdd2/minhnv/CodingYOLOv12/Dataset/T-Student_FIT-DNU-1/data.yaml"
+# Thiết lập logging
+log_file = setup_logging(EVAL_RESULTS_DIR)
+logging.info("Bắt đầu đánh giá mô hình YOLOv12 trên tập TEST")
 
-# Define hyperparameter configurations to try
-hyperparameter_configs = [
-    # Configuration dictionaries - each represents a complete experiment
-    {
-        "name": "baseline",
-        "model_size": "yolov12s",  # Try different model sizes: yolov8n, yolov8s, yolov8m, yolov8l
-        "epochs": 300,
-        "patience": 30,
-        "imgsz": 640,
-        "batch": 32,
-        "optimizer": "Adam",  # Try: 'Adam', 'SGD', 'AdamW'
-        "lr0": 0.01,
-        "lrf": 0.1,
-        "weight_decay": 0.0005,
-        "warmup_epochs": 3.0,
-        "augmentation": "default",  # Controls which augmentation settings to use
-    },
-    {
-        "name": "high_lr",
-        "model_size": "yolov12s",
-        "epochs": 300,
-        "patience": 30,
-        "imgsz": 640,
-        "batch": 32,
-        "optimizer": "Adam",
-        "lr0": 0.03,  # Higher learning rate
-        "lrf": 0.1,
-        "weight_decay": 0.0005,
-        "warmup_epochs": 5.0,  # Longer warmup for higher LR
-        "augmentation": "default",
-    },
-    {
-        "name": "sgd_optimizer",
-        "model_size": "yolov12s",
-        "epochs": 300,
-        "patience": 30,
-        "imgsz": 640,
-        "batch": 32,
-        "optimizer": "SGD",  # Changed optimizer
-        "lr0": 0.01,
-        "lrf": 0.01,  # Slower LR decay
-        "momentum": 0.95,  # Higher momentum for SGD
-        "weight_decay": 0.0005,
-        "warmup_epochs": 3.0,
-        "augmentation": "default",
-    },
-    {
-        "name": "heavy_aug",
-        "model_size": "yolov12s",
-        "epochs": 300,
-        "patience": 30,
-        "imgsz": 640,
-        "batch": 32,
-        "optimizer": "Adam",
-        "lr0": 0.01,
-        "lrf": 0.1,
-        "weight_decay": 0.0005,
-        "warmup_epochs": 3.0,
-        "augmentation": "heavy",  # More aggressive augmentation
-    },
-    {
-        "name": "larger_model",
-        "model_size": "yolov12s",  # Larger model architecture
-        "epochs": 300,
-        "patience": 30,
-        "imgsz": 640,
-        "batch": 16,  # Reduced batch size for larger model
-        "optimizer": "Adam",
-        "lr0": 0.01,
-        "lrf": 0.1,
-        "weight_decay": 0.0005,
-        "warmup_epochs": 3.0,
-        "augmentation": "default",
-    },
-    {
-        "name": "longer_training",
-        "model_size": "yolov12s",
-        "epochs": 500,  # More epochs
-        "patience": 50,  # Higher patience
-        "imgsz": 640,
-        "batch": 32,
-        "optimizer": "Adam",
-        "lr0": 0.01,
-        "lrf": 0.01,  # Slower LR decay for longer training
-        "weight_decay": 0.0005,
-        "warmup_epochs": 3.0,
-        "augmentation": "default",
-    },
-]
+# Tìm tất cả các mô hình đã lưu
+def find_models():
+    model_files = []
+    # Tìm tất cả các file .pt trong thư mục BASE_MODELS_DIR và các thư mục con
+    for root, dirs, files in os.walk(BASE_MODELS_DIR):
+        for file in files:
+            if file.endswith('.pt'):
+                model_path = os.path.join(root, file)
+                # Lấy tên thí nghiệm từ tên file
+                exp_name = file.replace('.pt', '')
+                model_files.append({
+                    'path': model_path,
+                    'name': exp_name
+                })
+    
+    logging.info(f"Tìm thấy {len(model_files)} mô hình để đánh giá")
+    return model_files
 
-# Augmentation configurations
-augmentation_configs = {
-    "default": {
-        "hsv_h": 0.015,
-        "hsv_s": 0.7,
-        "hsv_v": 0.4,
-        "degrees": 10.0,
-        "translate": 0.1,
-        "scale": 0.5,
-        "shear": 2.0,
-        "perspective": 0.0001,
-        "flipud": 0.5,
-        "fliplr": 0.5,
-        "mosaic": 1.0,
-        "mixup": 0.1,
-        "copy_paste": 0.1,
-        "erasing": 0.4,
-    },
-    "light": {
-        "hsv_h": 0.01,
-        "hsv_s": 0.5,
-        "hsv_v": 0.3,
-        "degrees": 5.0,
-        "translate": 0.05,
-        "scale": 0.2,
-        "shear": 1.0,
-        "perspective": 0.0,
-        "flipud": 0.0,
-        "fliplr": 0.5,
-        "mosaic": 0.7,
-        "mixup": 0.0,
-        "copy_paste": 0.0,
-        "erasing": 0.2,
-    },
-    "heavy": {
-        "hsv_h": 0.02,
-        "hsv_s": 0.9,
-        "hsv_v": 0.6,
-        "degrees": 15.0,
-        "translate": 0.2,
-        "scale": 0.7,
-        "shear": 3.0,
-        "perspective": 0.001,
-        "flipud": 0.5,
-        "fliplr": 0.5,
-        "mosaic": 1.0,
-        "mixup": 0.3,
-        "copy_paste": 0.3,
-        "erasing": 0.6,
-    }
-}
+# Lấy tên tệp cấu hình đi kèm với mô hình
+def get_config_for_model(model_path):
+    model_dir = os.path.dirname(model_path)
+    config_path = os.path.join(model_dir, 'config.json')
+    if os.path.exists(config_path):
+        with open(config_path, 'r') as f:
+            return json.load(f)
+    return None
 
-# Results tracking
-experiment_results = []
-
-# Run each hyperparameter configuration
-for config_idx, config in enumerate(hyperparameter_configs):
-    print(f"\n\n{'='*50}")
-    print(f"Running experiment {config_idx+1}/{len(hyperparameter_configs)}: {config['name']}")
-    print(f"{'='*50}")
+# Đánh giá một mô hình trên tập test
+def evaluate_model(model_info):
+    model_path = model_info['path']
+    model_name = model_info['name']
     
-    # Set model size
-    nameYoloFamily = config["model_size"]
-    
-    # Create unique save path for this experiment
-    experiment_date = datetime.now().strftime("%d%m%Y_%H%M%S")
-    experiment_save_path = f'/hdd2/minhnv/CodingYOLOv12/Behavior-Detect-Student-YOLO/StaticModels/{nameYoloFamily}_{experiment_date}_exp{config_idx+1}_{config["name"]}/'
-    os.makedirs(experiment_save_path, exist_ok=True)
-    
-    # Setup logging cho experiment này
-    setup_logging(experiment_save_path)
-    
-    # Save configuration for reference
-    with open(os.path.join(experiment_save_path, 'config.json'), 'w') as f:
-        json.dump(config, f, indent=4)
-    
-    # Initialize model
-    model = YOLO(f'{nameYoloFamily}.yaml')
-    
-    # Change working directory
-    os.chdir(experiment_save_path)
-    
-    # Get augmentation settings
-    aug_config = augmentation_configs[config.get("augmentation", "default")]
-    
-    # Prepare training arguments
-    train_args = {
-        "data": data_yaml_path,
-        "epochs": config["epochs"],
-        "patience": config["patience"],
-        "imgsz": config["imgsz"],
-        "batch": config["batch"],
-        "optimizer": config["optimizer"],
-        "lr0": config["lr0"],
-        "lrf": config["lrf"],
-        "weight_decay": config["weight_decay"],
-        "warmup_epochs": config["warmup_epochs"],
-        "pretrained": True,
-        "dropout": 0.0,
-        "save_period": -1,  # Không lưu các epoch trung gian
-        "save_best": True,  # Lưu model tốt nhất
-        "save_last": False  # Không lưu model cuối cùng
-        # Add all augmentation parameters
-        **aug_config
-    }
-    
-    # Add momentum if using SGD
-    if config["optimizer"] == "SGD" and "momentum" in config:
-        train_args["momentum"] = config["momentum"]
-    
-    # Add learning rate scheduler parameters
-    train_args.update({
-        "cos_lr": True,  # Cosine learning rate schedule
-        "warmup_momentum": 0.8,
-        "warmup_bias_lr": 0.1
-    })
-    
-    # Add model checkpointing parameters
-    train_args.update({
-        "save_period": 2,  # Save every 50 epochs
-        "box": 7.5,    # Box loss weight
-        "cls": 0.5,    # Classification loss weight
-        "dfl": 1.5     # DFL loss weight
-    })
-    
-    # Add NMS parameters
-    train_args.update({
-        "conf": 0.25,  # Confidence threshold
-        "iou": 0.7,    # NMS IoU threshold
-        "max_det": 300 # Maximum number of detections
-    })
-    
-    # Train model with this configuration
-    print(f"Training with configuration: {config['name']}")
-    print(json.dumps(train_args, indent=2))
+    logging.info(f"Đánh giá mô hình: {model_name}")
     
     try:
-        results = model.train(**train_args)
+        # Tải mô hình
+        model = YOLO(model_path)
+        
+        # Lấy cấu hình
+        config = get_config_for_model(model_path)
+        
+        # Chạy đánh giá trên tập test
+        results = model.val(data=DATA_YAML, split='test')
+        
+        # Tạo thư mục cho kết quả của mô hình này
+        model_result_dir = os.path.join(EVAL_RESULTS_DIR, model_name)
+        os.makedirs(model_result_dir, exist_ok=True)
+        
+        # Phân tích class-wise metrics (nếu có)
+        class_names = results.names
+        class_metrics = {}
+        if hasattr(results, 'confusion_matrix') and results.confusion_matrix is not None:
+            confusion_matrix = results.confusion_matrix.matrix
+            for i, name in enumerate(class_names):
+                if i < confusion_matrix.shape[0]:
+                    tp = confusion_matrix[i, i]
+                    fp_sum = confusion_matrix[:, i].sum() - tp
+                    fn_sum = confusion_matrix[i, :].sum() - tp
+                    precision = tp / (tp + fp_sum) if (tp + fp_sum) > 0 else 0
+                    recall = tp / (tp + fn_sum) if (tp + fn_sum) > 0 else 0
+                    f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
+                    class_metrics[name] = {
+                        'precision': float(precision),
+                        'recall': float(recall),
+                        'f1': float(f1)
+                    }
+        
+        # Đọc metrics từ file CSV (đường dẫn cho tập test)
+        csv_path = os.path.join(model_result_dir, "runs", "detect", "test", "results.csv")
+        if not os.path.exists(csv_path):
+            raise FileNotFoundError(f"Không tìm thấy file CSV tại: {csv_path}")
+        df_metrics = pd.read_csv(csv_path)
+        best_row = df_metrics.loc[df_metrics['metrics/mAP50-95(B)'].idxmax()]
+        
+        # Thu thập metrics từ file CSV
+        metrics = {
+            "map50": float(best_row['metrics/mAP50(B)']),
+            "map50_95": float(best_row['metrics/mAP50-95(B)']),
+            "precision": float(best_row['metrics/precision(B)']),
+            "recall": float(best_row['metrics/recall(B)']),
+            "best_epoch": int(best_row['epoch']),
+            "total_epochs": int(config["epochs"]) if config else 0,
+            "evaluation_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        
+        # Nếu có trainer và thuộc tính best_epoch thì cập nhật lại
+        if hasattr(results, 'trainer') and hasattr(results.trainer, 'best_epoch'):
+            metrics["best_epoch"] = int(results.trainer.best_epoch)
+            metrics["total_epochs"] = int(results.trainer.epoch)
+        
+        # Thêm các thông số khác từ kết quả đánh giá (nếu có)
+        metrics["speed_ms"] = float(results.speed['inference'])
+        metrics["speed_fps"] = 1000 / float(results.speed['inference'])
+        
+        # Lưu kết quả metrics vào file JSON
+        with open(os.path.join(model_result_dir, 'metrics.json'), 'w') as f:
+            json.dump(metrics, f, indent=4)
+        
+        # Thực hiện inference để visualize kết quả trên một số ảnh test
+        vis_results = model.predict(
+            source=TEST_DATA_PATH,
+            conf=0.25,
+            iou=0.7,
+            max_det=300,
+            save=True,
+            save_conf=True,
+            save_txt=True,
+            project=model_result_dir,
+            name='predictions'
+        )
+        
+        logging.info(f"Đã đánh giá xong mô hình: {model_name}")
+        logging.info(f"  mAP@0.5: {metrics['map50']:.4f}")
+        logging.info(f"  mAP@0.5:0.95: {metrics['map50_95']:.4f}")
+        logging.info(f"  Precision: {metrics['precision']:.4f}")
+        logging.info(f"  Recall: {metrics['recall']:.4f}")
+        logging.info(f"  Tốc độ: {metrics['speed_ms']:.2f}ms ({metrics['speed_fps']:.1f} FPS)")
+        
+        # Gộp kết quả đánh giá và cấu hình (nếu có)
+        metrics["model_name"] = model_name
+        metrics["model_path"] = model_path
+        metrics["config"] = config
+        
+        return metrics
+    
     except Exception as e:
-        logging.error(f"Error in experiment {config['name']}: {str(e)}")
-        logging.error(f"Configuration: {json.dumps(config, indent=2)}")
-        continue
+        logging.error(f"Lỗi khi đánh giá mô hình {model_name}: {str(e)}")
+        return None
+
+# Chức năng chính
+def main():
+    model_list = find_models()
     
-    # Save model
-    model_filename = f'{nameYoloFamily}_{config["name"]}.pt'
-    full_model_path = os.path.join(experiment_save_path, model_filename)
-    model.save(full_model_path)
+    if not model_list:
+        logging.error("Không tìm thấy mô hình nào để đánh giá!")
+        return
     
-    # Calculate model size
-    model_size_mb = os.path.getsize(full_model_path) / (1024 * 1024)
+    results = []
+    for model_info in tqdm(model_list, desc="Đánh giá mô hình"):
+        result = evaluate_model(model_info)
+        if result:
+            results.append(result)
     
-    # Store results
-    experiment_result = {
-        "experiment_name": config["name"],
-        "model_path": full_model_path,
-        "model_size_mb": model_size_mb,
-        "metrics": results,
-        "early_stopping_epoch": results.epoch,
-        "best_epoch": results.best_epoch,
-        "training_time": results.duration,
-    }
-    experiment_results.append(experiment_result)
+    if not results:
+        logging.error("Không có mô hình nào được đánh giá thành công!")
+        return
     
-    # Log results
-    log_path = os.path.join(experiment_save_path, f'training_log_{model_filename}.txt')
-    with open(log_path, 'w', encoding='utf-8') as log_file:
-        log_file.write(f"Experiment: {config['name']}\n")
-        log_file.write(f"Model: {nameYoloFamily}\n")
-        log_file.write(f"Date: {experiment_date}\n")
-        log_file.write(f"Model size: {model_size_mb:.2f} MB\n")
-        log_file.write(f"Configuration:\n{json.dumps(config, indent=2)}\n")
-        log_file.write(f"Training arguments:\n{json.dumps(train_args, indent=2)}\n")
-        # Add more metrics as needed
-        log_file.write(f"Validation mAP50: {results.val.map50}\n")
-        log_file.write(f"Validation mAP50-95: {results.val.map}\n")
-        log_file.write(f"Validation Precision: {results.val.precision}\n")
-        log_file.write(f"Validation Recall: {results.val.recall}\n")
-        log_file.write(f"GPU Memory Used: {get_gpu_memory():.2f} MB\n")
-
-# Save all experiment results to compare them
-final_results_path = os.path.join('/hdd2/minhnv/CodingYOLOv12/Behavior-Detect-Student-YOLO/StaticModels/', f'all_experiments_{datetime.now().strftime("%d%m%Y")}.json')
-with open(final_results_path, 'w') as f:
-    json.dump(experiment_results, f, indent=4)
-
-print(f"\nAll experiments completed. Results saved to {final_results_path}")
-
-# Thêm kiểm tra trước khi tìm best experiment
-if experiment_results:
-    best_experiment = min(experiment_results, key=lambda x: x.get("metrics", {}).get("val_loss", float('inf')))
-    print(f"\nBest experiment: {best_experiment['experiment_name']}")
-    print(f"Best model path: {best_experiment['model_path']}")
-else:
-    print("\nNo experiments completed successfully!")
-
-def get_gpu_memory():
-    if torch.cuda.is_available():
-        return torch.cuda.memory_allocated() / 1024**2  # MB
-    return 0
-
-def run_cross_validation(config, n_splits=5):
-    kf = KFold(n_splits=n_splits, shuffle=True)
-    cv_results = []
+    logging.info(f"Đánh giá thành công {len(results)}/{len(model_list)} mô hình")
     
-    for fold, (train_idx, val_idx) in enumerate(kf.split(dataset)):
-        # Train model for this fold
-        results = model.train(**train_args)
-        cv_results.append(results)
+    # Lưu kết quả tổng hợp
+    timestamp = datetime.now().strftime("%d%m%Y_%H%M%S")
+    summary_path = os.path.join(EVAL_RESULTS_DIR, f'model_comparison_{timestamp}.json')
+    with open(summary_path, 'w') as f:
+        json.dump(results, f, indent=4)
     
-    return cv_results
-
-def check_gpu():
-    if not torch.cuda.is_available():
-        logging.warning("GPU not available. Training will be slower!")
-        return False
-    logging.info(f"Using GPU: {torch.cuda.get_device_name(0)}")
-    return True
-
-# Thêm vào đầu code
-if not check_gpu():
-    logging.warning("Consider using GPU for faster training!")
-
-def validate_config(config):
-    required_fields = ["name", "model_size", "epochs", "batch", "optimizer"]
-    for field in required_fields:
-        if field not in config:
-            raise ValueError(f"Missing required field: {field}")
+    # Tạo DataFrame và lưu bảng so sánh
+    df = pd.DataFrame([{
+        'Model': r['model_name'],
+        'mAP@0.5': r['map50'],
+        'mAP@0.5:0.95': r['map50_95'],
+        'Precision': r['precision'],
+        'Recall': r['recall'],
+        'Speed (ms)': r['speed_ms'],
+        'FPS': r['speed_fps']
+    } for r in results])
     
-    if config["optimizer"] == "SGD" and "momentum" not in config:
-        raise ValueError("SGD optimizer requires momentum parameter")
+    df = df.sort_values('mAP@0.5:0.95', ascending=False)
+    csv_path = os.path.join(EVAL_RESULTS_DIR, f'model_comparison_{timestamp}.csv')
+    df.to_csv(csv_path, index=False)
+    
+    print("\n" + "="*80)
+    print("BẢNG SO SÁNH HIỆU SUẤT CÁC MÔ HÌNH TRÊN TẬP TEST")
+    print("="*80)
+    print(tabulate(df, headers='keys', tablefmt='pretty', floatfmt='.4f'))
+    print("="*80)
+    
+    # Tạo biểu đồ so sánh
+    plt.figure(figsize=(14, 10))
+    plt.subplot(2, 1, 1)
+    metrics_df = df[['Model', 'mAP@0.5', 'mAP@0.5:0.95', 'Precision', 'Recall']]
+    metrics_df = pd.melt(metrics_df, id_vars=['Model'], var_name='Metric', value_name='Value')
+    sns.barplot(x='Model', y='Value', hue='Metric', data=metrics_df)
+    plt.title('So sánh hiệu suất các mô hình')
+    plt.xticks(rotation=45, ha='right')
+    plt.ylim(0, 1.0)
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    
+    plt.subplot(2, 1, 2)
+    sns.barplot(x='Model', y='FPS', data=df, palette='viridis')
+    plt.title('So sánh tốc độ inference (FPS)')
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()
+    
+    chart_path = os.path.join(EVAL_RESULTS_DIR, f'model_comparison_chart_{timestamp}.png')
+    plt.savefig(chart_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    
+    create_detailed_report(results, timestamp)
+    
+    logging.info(f"Đã lưu bảng so sánh tại: {csv_path}")
+    logging.info(f"Đã lưu biểu đồ so sánh tại: {chart_path}")
+    print(f"\nĐã lưu kết quả đánh giá tại: {EVAL_RESULTS_DIR}")
+
+# Tạo báo cáo chi tiết
+def create_detailed_report(results, timestamp):
+    report_path = os.path.join(EVAL_RESULTS_DIR, f'detailed_report_{timestamp}.html')
+    
+    html_content = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Báo cáo đánh giá mô hình YOLOv12</title>
+        <style>
+            body {{ font-family: Arial, sans-serif; margin: 20px; }}
+            table {{ border-collapse: collapse; width: 100%; }}
+            th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+            th {{ background-color: #f2f2f2; }}
+            tr:nth-child(even) {{ background-color: #f9f9f9; }}
+            .header {{ background-color: #4CAF50; color: white; padding: 10px; }}
+            .model-section {{ margin-bottom: 30px; border: 1px solid #ddd; padding: 15px; }}
+            .metrics {{ margin-top: 10px; }}
+            .class-metrics {{ margin-top: 20px; }}
+            .highlight {{ background-color: #ffffcc; }}
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <h1>Báo cáo đánh giá mô hình YOLOv12</h1>
+            <p>Ngày tạo: {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}</p>
+        </div>
+        
+        <h2>Bảng so sánh hiệu suất</h2>
+        <table>
+            <tr>
+                <th>Model</th>
+                <th>mAP@0.5</th>
+                <th>mAP@0.5:0.95</th>
+                <th>Precision</th>
+                <th>Recall</th>
+                <th>Speed (ms)</th>
+                <th>FPS</th>
+            </tr>
+    """
+    
+    sorted_results = sorted(results, key=lambda x: x['map50_95'], reverse=True)
+    for r in sorted_results:
+        html_content += f"""
+            <tr>
+                <td>{r['model_name']}</td>
+                <td>{r['map50']:.4f}</td>
+                <td>{r['map50_95']:.4f}</td>
+                <td>{r['precision']:.4f}</td>
+                <td>{r['recall']:.4f}</td>
+                <td>{r['speed_ms']:.2f}</td>
+                <td>{r['speed_fps']:.1f}</td>
+            </tr>
+        """
+    
+    html_content += """
+        </table>
+        
+        <h2>Chi tiết từng mô hình</h2>
+    """
+    
+    for r in sorted_results:
+        html_content += f"""
+        <div class="model-section">
+            <h3>{r['model_name']}</h3>
+            <p><strong>Đường dẫn:</strong> {r['model_path']}</p>
+            <div class="metrics">
+                <h4>Hiệu suất chung:</h4>
+                <ul>
+                    <li>mAP@0.5: {r['map50']:.4f}</li>
+                    <li>mAP@0.5:0.95: {r['map50_95']:.4f}</li>
+                    <li>Precision: {r['precision']:.4f}</li>
+                    <li>Recall: {r['recall']:.4f}</li>
+                    <li>Tốc độ: {r['speed_ms']:.2f}ms ({r['speed_fps']:.1f} FPS)</li>
+                </ul>
+            </div>
+        """
+        if r['config']:
+            html_content += "<div class='config'><h4>Cấu hình:</h4><ul>"
+            for key, value in r['config'].items():
+                html_content += f"<li><strong>{key}:</strong> {value}</li>"
+            html_content += "</ul></div>"
+        
+        if r.get('class_metrics'):
+            html_content += """
+            <div class="class-metrics">
+                <h4>Hiệu suất theo lớp:</h4>
+                <table>
+                    <tr>
+                        <th>Lớp</th>
+                        <th>Precision</th>
+                        <th>Recall</th>
+                        <th>F1-Score</th>
+                    </tr>
+            """
+            for class_name, metrics in r['class_metrics'].items():
+                html_content += f"""
+                    <tr>
+                        <td>{class_name}</td>
+                        <td>{metrics['precision']:.4f}</td>
+                        <td>{metrics['recall']:.4f}</td>
+                        <td>{metrics['f1']:.4f}</td>
+                    </tr>
+                """
+            html_content += "</table></div>"
+        
+        html_content += "</div>"
+    
+    html_content += """
+    </body>
+    </html>
+    """
+    
+    with open(report_path, 'w') as f:
+        f.write(html_content)
+    
+    logging.info(f"Đã tạo báo cáo chi tiết tại: {report_path}")
+
+if __name__ == "__main__":
+    main()
