@@ -1,0 +1,197 @@
+2025-04-01 23:43:07,022 - INFO - Bắt đầu thí nghiệm: baseline
+2025-04-01 23:43:07,499 - INFO - Tham số huấn luyện:
+{
+  "data": "/hdd2/minhnv/CodingYOLOv12/Dataset/T-Student_FIT-DNU-update-6-split/data.yaml",
+  "epochs": 200,
+  "patience": 35,
+  "imgsz": 640,
+  "batch": 32,
+  "optimizer": "Adam",
+  "lr0": 0.01,
+  "lrf": 0.1,
+  "weight_decay": 0.0005,
+  "warmup_epochs": 3.0,
+  "pretrained": true,
+  "dropout": 0.0,
+  "save_period": -1,
+  "save": true,
+  "cos_lr": true,
+  "conf": 0.25,
+  "iou": 0.7,
+  "hsv_h": 0.015,
+  "hsv_s": 0.7,
+  "hsv_v": 0.4,
+  "degrees": 10.0,
+  "translate": 0.1,
+  "scale": 0.5,
+  "shear": 2.0,
+  "perspective": 0.0001,
+  "flipud": 0.5,
+  "fliplr": 0.5,
+  "mosaic": 1.0,
+  "mixup": 0.1,
+  "copy_paste": 0.1,
+  "erasing": 0.4
+}
+2025-04-01 23:43:27,788 - ERROR - Lỗi trong thí nghiệm baseline: CUDA out of memory. Tried to allocate 26.00 MiB. GPU 0 has a total capacity of 23.50 GiB of which 5.44 MiB is free. Process 128744 has 1.22 GiB memory in use. Process 313810 has 1.06 GiB memory in use. Process 3167962 has 2.63 GiB memory in use. Process 103572 has 1.24 GiB memory in use. Process 1549893 has 344.00 MiB memory in use. Including non-PyTorch memory, this process has 16.96 GiB memory in use. Of the allocated memory 16.58 GiB is allocated by PyTorch, and 73.31 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+2025-04-01 23:43:27,791 - INFO - Bắt đầu thí nghiệm: high_lr
+2025-04-01 23:43:28,451 - INFO - Tham số huấn luyện:
+{
+  "data": "/hdd2/minhnv/CodingYOLOv12/Dataset/T-Student_FIT-DNU-update-6-split/data.yaml",
+  "epochs": 200,
+  "patience": 35,
+  "imgsz": 640,
+  "batch": 32,
+  "optimizer": "Adam",
+  "lr0": 0.03,
+  "lrf": 0.1,
+  "weight_decay": 0.0005,
+  "warmup_epochs": 5.0,
+  "pretrained": true,
+  "dropout": 0.0,
+  "save_period": -1,
+  "save": true,
+  "cos_lr": true,
+  "conf": 0.25,
+  "iou": 0.7,
+  "hsv_h": 0.015,
+  "hsv_s": 0.7,
+  "hsv_v": 0.4,
+  "degrees": 10.0,
+  "translate": 0.1,
+  "scale": 0.5,
+  "shear": 2.0,
+  "perspective": 0.0001,
+  "flipud": 0.5,
+  "fliplr": 0.5,
+  "mosaic": 1.0,
+  "mixup": 0.1,
+  "copy_paste": 0.1,
+  "erasing": 0.4
+}
+2025-04-01 23:43:45,145 - ERROR - Lỗi trong thí nghiệm high_lr: CUDA error: out of memory
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+2025-04-01 23:43:45,152 - INFO - Bắt đầu thí nghiệm: sgd_optimizer
+2025-04-01 23:43:45,740 - INFO - Tham số huấn luyện:
+{
+  "data": "/hdd2/minhnv/CodingYOLOv12/Dataset/T-Student_FIT-DNU-update-6-split/data.yaml",
+  "epochs": 200,
+  "patience": 35,
+  "imgsz": 640,
+  "batch": 32,
+  "optimizer": "SGD",
+  "lr0": 0.01,
+  "lrf": 0.01,
+  "weight_decay": 0.0005,
+  "warmup_epochs": 3.0,
+  "pretrained": true,
+  "dropout": 0.0,
+  "save_period": -1,
+  "save": true,
+  "cos_lr": true,
+  "conf": 0.25,
+  "iou": 0.7,
+  "hsv_h": 0.015,
+  "hsv_s": 0.7,
+  "hsv_v": 0.4,
+  "degrees": 10.0,
+  "translate": 0.1,
+  "scale": 0.5,
+  "shear": 2.0,
+  "perspective": 0.0001,
+  "flipud": 0.5,
+  "fliplr": 0.5,
+  "mosaic": 1.0,
+  "mixup": 0.1,
+  "copy_paste": 0.1,
+  "erasing": 0.4,
+  "momentum": 0.95
+}
+2025-04-01 23:44:02,153 - ERROR - Lỗi trong thí nghiệm sgd_optimizer: CUDA error: invalid argument
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+2025-04-01 23:44:02,159 - INFO - Bắt đầu thí nghiệm: heavy_aug
+2025-04-01 23:44:02,644 - INFO - Tham số huấn luyện:
+{
+  "data": "/hdd2/minhnv/CodingYOLOv12/Dataset/T-Student_FIT-DNU-update-6-split/data.yaml",
+  "epochs": 200,
+  "patience": 35,
+  "imgsz": 640,
+  "batch": 32,
+  "optimizer": "Adam",
+  "lr0": 0.01,
+  "lrf": 0.1,
+  "weight_decay": 0.0005,
+  "warmup_epochs": 3.0,
+  "pretrained": true,
+  "dropout": 0.0,
+  "save_period": -1,
+  "save": true,
+  "cos_lr": true,
+  "conf": 0.25,
+  "iou": 0.7,
+  "hsv_h": 0.02,
+  "hsv_s": 0.9,
+  "hsv_v": 0.6,
+  "degrees": 15.0,
+  "translate": 0.2,
+  "scale": 0.7,
+  "shear": 3.0,
+  "perspective": 0.001,
+  "flipud": 0.5,
+  "fliplr": 0.5,
+  "mosaic": 1.0,
+  "mixup": 0.3,
+  "copy_paste": 0.3,
+  "erasing": 0.6
+}
+2025-04-01 23:44:17,435 - ERROR - Lỗi trong thí nghiệm heavy_aug: CUDA error: invalid argument
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+2025-04-01 23:44:17,442 - INFO - Bắt đầu thí nghiệm: light_aug
+2025-04-01 23:44:17,922 - INFO - Tham số huấn luyện:
+{
+  "data": "/hdd2/minhnv/CodingYOLOv12/Dataset/T-Student_FIT-DNU-update-6-split/data.yaml",
+  "epochs": 200,
+  "patience": 30,
+  "imgsz": 640,
+  "batch": 16,
+  "optimizer": "Adam",
+  "lr0": 0.01,
+  "lrf": 0.1,
+  "weight_decay": 0.0005,
+  "warmup_epochs": 3.0,
+  "pretrained": true,
+  "dropout": 0.0,
+  "save_period": -1,
+  "save": true,
+  "cos_lr": true,
+  "conf": 0.25,
+  "iou": 0.7,
+  "hsv_h": 0.01,
+  "hsv_s": 0.5,
+  "hsv_v": 0.3,
+  "degrees": 5.0,
+  "translate": 0.05,
+  "scale": 0.2,
+  "shear": 1.0,
+  "perspective": 0.0,
+  "flipud": 0.0,
+  "fliplr": 0.5,
+  "mosaic": 0.7,
+  "mixup": 0.0,
+  "copy_paste": 0.0,
+  "erasing": 0.2
+}
+2025-04-01 23:44:40,265 - ERROR - Lỗi trong thí nghiệm light_aug: CUDA error: invalid argument
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+

@@ -1,0 +1,78 @@
+2025-04-01 23:30:22,290 - INFO - Bắt đầu thí nghiệm: baseline
+2025-04-01 23:30:22,662 - INFO - Tham số huấn luyện:
+{
+  "data": "/hdd2/minhnv/CodingYOLOv12/Dataset/T-Student_FIT-DNU-update-6-split/data.yaml",
+  "epochs": 2,
+  "patience": 15,
+  "imgsz": 640,
+  "batch": 32,
+  "optimizer": "Adam",
+  "lr0": 0.01,
+  "lrf": 0.1,
+  "weight_decay": 0.0005,
+  "warmup_epochs": 3.0,
+  "pretrained": true,
+  "dropout": 0.0,
+  "save_period": -1,
+  "save": true,
+  "cos_lr": true,
+  "conf": 0.25,
+  "iou": 0.7,
+  "hsv_h": 0.015,
+  "hsv_s": 0.7,
+  "hsv_v": 0.4,
+  "degrees": 10.0,
+  "translate": 0.1,
+  "scale": 0.5,
+  "shear": 2.0,
+  "perspective": 0.0001,
+  "flipud": 0.5,
+  "fliplr": 0.5,
+  "mosaic": 1.0,
+  "mixup": 0.1,
+  "copy_paste": 0.1,
+  "erasing": 0.4
+}
+2025-04-01 23:37:11,127 - INFO - Kết quả thí nghiệm baseline:
+2025-04-01 23:37:11,127 - INFO -   mAP@0.5: 0.2356
+2025-04-01 23:37:11,127 - INFO -   mAP@0.5:0.95: 0.1120
+2025-04-01 23:37:11,127 - INFO -   Precision: 0.3146
+2025-04-01 23:37:11,127 - INFO -   Recall: 0.1773
+2025-04-01 23:37:11,128 - INFO -   Best epoch: 2/2
+2025-04-01 23:37:11,128 - INFO -   Thời gian huấn luyện: 0:06:48.280100
+2025-04-01 23:37:11,128 - INFO -   Kích thước mô hình: 17.80 MB
+2025-04-01 23:37:11,128 - INFO - Bắt đầu thí nghiệm: high_lr
+2025-04-01 23:37:11,540 - INFO - Tham số huấn luyện:
+{
+  "data": "/hdd2/minhnv/CodingYOLOv12/Dataset/T-Student_FIT-DNU-update-6-split/data.yaml",
+  "epochs": 2,
+  "patience": 15,
+  "imgsz": 640,
+  "batch": 32,
+  "optimizer": "Adam",
+  "lr0": 0.03,
+  "lrf": 0.1,
+  "weight_decay": 0.0005,
+  "warmup_epochs": 5.0,
+  "pretrained": true,
+  "dropout": 0.0,
+  "save_period": -1,
+  "save": true,
+  "cos_lr": true,
+  "conf": 0.25,
+  "iou": 0.7,
+  "hsv_h": 0.015,
+  "hsv_s": 0.7,
+  "hsv_v": 0.4,
+  "degrees": 10.0,
+  "translate": 0.1,
+  "scale": 0.5,
+  "shear": 2.0,
+  "perspective": 0.0001,
+  "flipud": 0.5,
+  "fliplr": 0.5,
+  "mosaic": 1.0,
+  "mixup": 0.1,
+  "copy_paste": 0.1,
+  "erasing": 0.4
+}

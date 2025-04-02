@@ -20,11 +20,18 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 # Cấu hình hiển thị
 SHOW_PREVIEW = False  # Đặt True nếu muốn hiển thị preview
 COLORS = {
-    0: (0, 255, 0),    # Xanh lá
-    1: (255, 0, 0),    # Xanh dương
-    2: (0, 0, 255),    # Đỏ
+    0: (0, 227, 255),   # computer (#e300ff → (227, 0, 255) → (0, 227, 255))
+    1: (255, 255, 0),   # phone (#FFFF00 → (255, 255, 0) → (255, 255, 0)) (không đổi)
+    2: (255, 49, 15),   # raising_hand (#31ff0f → (49, 255, 15) → (255, 49, 15))
+    3: (232, 0, 255),   # sleeping (#00e8ff → (0, 232, 255) → (232, 0, 255))
+    4: (0, 254, 86),    # turning_left (#FE0056 → (254, 0, 86) → (0, 254, 86))
+    5: (128, 255, 0),   # turning_right (#FF8000 → (255, 128, 0) → (128, 255, 0))
+    6: (122, 14, 254),  # using_computer (#0E7AFE → (14, 122, 254) → (122, 14, 254))
+    7: (34, 134, 255),  # using_phone (#8622FF → (134, 34, 255) → (34, 134, 255))
+    8: (171, 255, 171), # writing (#FFABAB → (255, 171, 171) → (171, 255, 171))
 }
-DEFAULT_COLOR = (0, 255, 0)
+
+# DEFAULT_COLOR = (0, 255, 0)
 
 def main():
     print("Bắt đầu chương trình...")

@@ -59,8 +59,8 @@ def split_video(input_path, output_folder, segment_length_minutes=5):
     print(f"Hoàn thành việc cắt video thành {num_segments} đoạn!")
 
 # Đường dẫn đến file video và thư mục đầu ra
-input_video = r"D:\USB_MSI\ClassRoom\IT_Semester2_20242025\04_AI_IOT\FinalPorject\TestingVideo\D11_20250303093031.mp4"
-output_folder = "OutputVideoD11"
+input_video = "/hdd2/minhnv/CodingYOLOv12/VideoTesting/D11_20250303093031.mp4"
+output_folder = "/hdd2/minhnv/CodingYOLOv12/VideoTesting/OutputVideoD11"
 
 # Gọi hàm để cắt video
 split_video(input_video, output_folder, segment_length_minutes=8)

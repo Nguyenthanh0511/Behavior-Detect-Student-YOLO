@@ -51,7 +51,7 @@ def validate_config(config):
         config["momentum"] = 0.9  # Giá trị mặc định nếu thiếu
 
 # Đường dẫn đến dataset
-data_yaml_path = "/hdd2/minhnv/CodingYOLOv12/Dataset/T-Student_FIT-DNU-update-1/data.yaml"
+data_yaml_path = "/hdd2/minhnv/CodingYOLOv12/Dataset/T-Student_FIT-DNU-update-6-split/data.yaml"
 
 # Thiết lập seed
 set_seed()
@@ -61,8 +61,8 @@ hyperparameter_configs = [
     {
         "name": "baseline",
         "model_size": "yolov12s",
-        "epochs": 2,
-        "patience": 15,
+        "epochs": 200,
+        "patience": 35,
         "imgsz": 640,
         "batch": 32,
         "optimizer": "Adam",
@@ -75,8 +75,8 @@ hyperparameter_configs = [
     {
         "name": "high_lr",
         "model_size": "yolov12s",
-        "epochs": 2,
-        "patience": 15,
+        "epochs": 200,
+        "patience": 35,
         "imgsz": 640,
         "batch": 32,
         "optimizer": "Adam",
@@ -89,8 +89,8 @@ hyperparameter_configs = [
     {
         "name": "sgd_optimizer",
         "model_size": "yolov12s",
-        "epochs": 2,
-        "patience": 10,
+        "epochs": 200,
+        "patience": 35,
         "imgsz": 640,
         "batch": 32,
         "optimizer": "SGD",
@@ -104,8 +104,8 @@ hyperparameter_configs = [
     {
         "name": "heavy_aug",
         "model_size": "yolov12s",
-        "epochs": 2,
-        "patience": 10,
+        "epochs": 200,
+        "patience": 35,
         "imgsz": 640,
         "batch": 32,
         "optimizer": "Adam",
@@ -118,8 +118,8 @@ hyperparameter_configs = [
     {
         "name": "light_aug",
         "model_size": "yolov12s",
-        "epochs": 2,
-        "patience": 10,
+        "epochs": 200,
+        "patience": 30,
         "imgsz": 640,
         "batch": 16,
         "optimizer": "Adam",
@@ -157,7 +157,7 @@ augmentation_configs = {
 }
 
 # Thư mục lưu kết quả
-base_save_dir = '/hdd2/minhnv/CodingYOLOv12/Behavior-Detect-Student-YOLO/StaticModels/yolov12Training-31032025_1833'
+base_save_dir = '/hdd2/minhnv/CodingYOLOv12/Behavior-Detect-Student-YOLO/StaticModels/yolov12Training-01042025_2342'
 os.makedirs(base_save_dir, exist_ok=True)
 
 # Khởi tạo cấu trúc kết quả

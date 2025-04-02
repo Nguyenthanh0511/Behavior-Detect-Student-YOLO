@@ -37,14 +37,6 @@ def video_feed():
     return Response(generate_frames(VIDEO_PATHS[current_video_index]),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
-@app.route('/next_video', methods=['POST'])
-def next_video():
-    global current_video_index
-    current_video_index = (current_video_index + 1) % len(VIDEO_PATHS)
-    return jsonify({
-        'message': 'Chuyển sang video tiếp theo',
-        'current_index': current_video_index
-    })
 
 if __name__ == '__main__':
     app.run(debug=True)
