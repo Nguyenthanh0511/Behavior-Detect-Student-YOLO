@@ -1,0 +1,14 @@
+{
+    "name": "high_lr",
+    "model_size": "yolov12s",
+    "epochs": 200,
+    "patience": 35,
+    "imgsz": 640,
+    "batch": 32,
+    "optimizer": "Adam",
+    "lr0": 0.03,
+    "lrf": 0.1,
+    "weight_decay": 0.0005,
+    "warmup_epochs": 5.0,
+    "augmentation": "default"
+}

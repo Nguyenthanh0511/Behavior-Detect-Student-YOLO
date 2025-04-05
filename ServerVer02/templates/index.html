@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Chuyển Video với Flask API</title>
+  <style>
+    /* Đặt reset cơ bản */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f2f5;
+      color: #333;
+    }
+
+    /* Thanh header với màu gradient (xanh - cam) */
+    header {
+      background: linear-gradient(90deg, #0053a0 0%, #ff7f00 100%);
+      color: #fff;
+      padding: 20px;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 24px;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    /* Khu vực chứa nội dung */
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      background-color: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    /* Video */
+    #video {
+      max-width: 100%;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+    }
+
+    /* Nút chuyển video */
+    .btn-switch {
+      display: inline-block;
+      background-color: #ff7f00;
+      border: none;
+      color: #fff;
+      padding: 10px 20px;
+      margin-top: 20px;
+      font-size: 16px;
+      font-weight: 500;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn-switch:hover {
+      background-color: #e66b00;
+    }
+
+    /* Footer */
+    footer {
+      margin-top: 40px;
+      padding: 20px;
+      text-align: center;
+      font-size: 14px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <h1>Đại học Đại Nam</h1>
+  </header>
+
+  <!-- Container chính -->
+  <div class="container">
+    <h2>Phát Video & Chuyển Tiếp</h2>
+    <img id="video" src="{{ url_for('video_feed') }}" alt="Video Feed">
+    <br>
+    <button class="btn-switch" onclick="switchVideo()">Chuyển Video</button>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    © 2025 - Demo Flask Streaming
+  </footer>
+
+  <script>
+    function switchVideo() {
+      fetch('/next_video', { method: 'POST' })
+      .then(response => response.json())
+      .then(data => {
+        console.log(data.message);
+        // Thêm timestamp để tránh cache
+        document.getElementById('video').src = "{{ url_for('video_feed') }}" + "?t=" + new Date().getTime();
+      })
+      .catch(err => console.error(err));
+    }
+  </script>
+
+</body>
+</html>
