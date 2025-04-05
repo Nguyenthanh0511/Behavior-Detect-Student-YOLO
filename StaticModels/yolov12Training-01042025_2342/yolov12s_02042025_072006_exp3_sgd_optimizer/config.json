@@ -1,0 +1,15 @@
+{
+    "name": "sgd_optimizer",
+    "model_size": "yolov12s",
+    "epochs": 200,
+    "patience": 35,
+    "imgsz": 640,
+    "batch": 32,
+    "optimizer": "SGD",
+    "lr0": 0.01,
+    "lrf": 0.01,
+    "momentum": 0.95,
+    "weight_decay": 0.0005,
+    "warmup_epochs": 3.0,
+    "augmentation": "default"
+}
